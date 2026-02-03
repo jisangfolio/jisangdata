@@ -18,12 +18,7 @@ from dotenv import load_dotenv
 current_dir = os.path.dirname(os.path.abspath(__file__))
 env_path = os.path.join(current_dir, ".env")
 
-# 2. 해당 경로의 .env 파일을 강제로 로드합니다.
 load_dotenv(dotenv_path=env_path)
-
-# (디버깅용) 화면에 경로가 제대로 잡히는지 확인해보세요. 해결되면 지우셔도 됩니다.
-st.write(f"검색 경로: {env_path}")
-st.write(f"파일 존재 여부: {os.path.exists(env_path)}")
 
 # 3. API 키 확인
 if not os.getenv("GOOGLE_API_KEY"):
