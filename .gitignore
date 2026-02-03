@@ -1,0 +1,8 @@
+# API Keys & Secrets
+.env
+.streamlit/secrets.toml
+api_key.txt
+
+# Python Cache
+__pycache__/
+*.pyc
