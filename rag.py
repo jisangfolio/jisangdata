@@ -32,8 +32,8 @@ if not os.getenv("GOOGLE_API_KEY"):
 GEMINI_MODEL = "gemini-2.0-flash"
 EMBEDDING_MODEL = "models/embedding-001"
 
-st.set_page_config(page_title="AnyData Chatbot", page_icon="📂")
-st.title("📂 내 파일과 대화하기 (AnyData Chatbot)")
+st.set_page_config(page_title="AnyData", page_icon="📂")
+st.title("📂 내 파일과 대화하기 (AnyData)")
 
 # 2. File Upload Logic
 # =========================================================
@@ -62,18 +62,15 @@ def process_uploaded_file(file):
 
     # 2. 텍스트로 변환 (모든 컬럼 합치기)
     documents = []
-    # 데이터프레임의 전체 행(row)을 돕니다
     for idx, row in df.iterrows():
         content_parts = []
         for col in df.columns:
             val = row[col]
             if pd.notna(val) and str(val).strip() != "":
                 content_parts.append(f"{col}: {val}")
-        
-        # 하나의 긴 텍스트로 합침
+
         page_content = "\n".join(content_parts)
-        
-        # [복구된 부분] 제목 컬럼 자동 지정 (첫 번째 컬럼을 제목으로 사용)
+
         title_col = df.columns[0]
         row_title = str(row[title_col])[:50] 
         
@@ -91,10 +88,6 @@ def process_uploaded_file(file):
     # 3. 청크 분할 (Split)
     splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
     splits = splitter.split_documents(documents)
-    
-    # [디버깅] 전체 문서 개수 확인
-    st.sidebar.info(f"📄 총 {len(documents)}개의 행을 읽었습니다.")
-    st.sidebar.info(f"✂️ 총 {len(splits)}개의 조각으로 나누었습니다.")
 
     # 4. 임베딩 및 벡터 저장 (배치 처리)
     embedding = GoogleGenerativeAIEmbeddings(model=EMBEDDING_MODEL)
