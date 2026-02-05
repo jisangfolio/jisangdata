@@ -83,7 +83,7 @@ def process_uploaded_file(file):
             metadata={
                 "row": idx,
                 "source": file.name,
-                "summary_title": row_title # <--- 여기가 빠져서 에러가 났었습니다!
+                "summary_title": row_title
             }
         )
         documents.append(doc)
@@ -125,7 +125,7 @@ def process_uploaded_file(file):
     if vectorstore:
         st.sidebar.success(f"✅ 최종 저장된 데이터 수: {vectorstore.index.ntotal}개")
     
-    retriever = vectorstore.as_retriever(search_kwargs={"k": 5})
+    retriever = vectorstore.as_retriever(search_kwargs={"k": 50})
     return df, retriever
 
 # 3. Main Logic
