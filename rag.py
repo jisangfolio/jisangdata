@@ -1,3 +1,8 @@
+
+'''
+demo quesitons
+'''
+
 import streamlit as st
 import pandas as pd
 import os
@@ -20,9 +25,8 @@ env_path = os.path.join(current_dir, ".env")
 
 load_dotenv(dotenv_path=env_path)
 
-# 3. API 키 확인
 if not os.getenv("GOOGLE_API_KEY"):
-    st.error(f"API Key를 찾을 수 없습니다. 경로를 확인해주세요: {env_path}")
+    st.error("API Key가 설정되지 않았습니다. .env 파일을 확인해주세요.")
     st.stop()
 
 GEMINI_MODEL = "gemini-2.0-flash"
@@ -37,7 +41,7 @@ with st.sidebar:
     st.header("파일 업로드")
     uploaded_file = st.file_uploader("CSV 또는 Excel 파일을 업로드하세요", type=["csv", "xlsx"])
 
-@st.cache_resource(show_spinner="AI가 문서를 읽고 있습니다... (데이터가 많으면 시간이 걸릴 수 있습니다)")
+@st.cache_resource(show_spinner="업로드된 파일을 분석 중입니다...")
 def process_uploaded_file(file):
     if file is None:
         return None, None
@@ -53,11 +57,12 @@ def process_uploaded_file(file):
         else:
             df = pd.read_excel(file)
     except Exception as e:
-        st.error(f"파일을 읽는 중 오류가 발생했습니다: {e}")
+        st.error(f"❌ 파일을 읽는 도중 오류가 발생했습니다: {e}")
         return None, None
 
-    # 2. 텍스트 변환 (Document 생성)
+    # 2. 텍스트로 변환 (모든 컬럼 합치기)
     documents = []
+    # 데이터프레임의 전체 행(row)을 돕니다
     for idx, row in df.iterrows():
         content_parts = []
         for col in df.columns:
@@ -65,52 +70,60 @@ def process_uploaded_file(file):
             if pd.notna(val) and str(val).strip() != "":
                 content_parts.append(f"{col}: {val}")
         
+        # 하나의 긴 텍스트로 합침
         page_content = "\n".join(content_parts)
+        
+        # [복구된 부분] 제목 컬럼 자동 지정 (첫 번째 컬럼을 제목으로 사용)
         title_col = df.columns[0]
         row_title = str(row[title_col])[:50] 
-
+        
+        # 문서 객체 생성
         doc = Document(
             page_content=page_content,
             metadata={
                 "row": idx,
                 "source": file.name,
-                "summary_title": row_title
+                "summary_title": row_title # <--- 여기가 빠져서 에러가 났었습니다!
             }
         )
         documents.append(doc)
 
-    # 3. 청크 분할
+    # 3. 청크 분할 (Split)
     splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
     splits = splitter.split_documents(documents)
+    
+    # [디버깅] 전체 문서 개수 확인
+    st.sidebar.info(f"📄 총 {len(documents)}개의 행을 읽었습니다.")
+    st.sidebar.info(f"✂️ 총 {len(splits)}개의 조각으로 나누었습니다.")
 
-    # 4. 임베딩 및 벡터 저장 (배치 처리 + 속도 조절)
+    # 4. 임베딩 및 벡터 저장 (배치 처리)
     embedding = GoogleGenerativeAIEmbeddings(model=EMBEDDING_MODEL)
     
-    # 진행률 표시바 생성
-    progress_text = "벡터 변환 중입니다. 잠시만 기다려주세요..."
-    my_bar = st.progress(0, text=progress_text)
+    # 진행률 표시줄
+    progress_bar = st.progress(0, text="데이터 저장 시작...")
     
-    batch_size = 20  # 한 번에 처리할 문서 수 (너무 크면 429 에러 발생)
-    total_splits = len(splits)
     vectorstore = None
-    
+    batch_size = 20
+    total_splits = len(splits)
+
     for i in range(0, total_splits, batch_size):
         batch = splits[i : i + batch_size]
         
-        # 첫 번째 배치로 VectorStore 생성, 그 이후는 추가(add)
         if vectorstore is None:
             vectorstore = FAISS.from_documents(batch, embedding=embedding)
         else:
             vectorstore.add_documents(batch)
-            
-        # 진행률 업데이트
-        percent_complete = min((i + batch_size) / total_splits, 1.0)
-        my_bar.progress(percent_complete, text=f"벡터 변환 중... ({int(percent_complete*100)}%)")
         
-        # API 제한을 피하기 위해 1초 대기 (데이터가 많으면 2~3초로 늘리세요)
+        # 진행률 업데이트
+        percent = min((i + batch_size) / total_splits, 1.0)
+        progress_bar.progress(percent, text=f"데이터 저장 중... ({int(percent*100)}%)")
+        
         time.sleep(1)
 
-    my_bar.empty() # 완료되면 진행바 삭제
+    progress_bar.empty()
+
+    if vectorstore:
+        st.sidebar.success(f"✅ 최종 저장된 데이터 수: {vectorstore.index.ntotal}개")
     
     retriever = vectorstore.as_retriever(search_kwargs={"k": 5})
     return df, retriever
@@ -143,7 +156,7 @@ llm = ChatGoogleGenerativeAI(model=GEMINI_MODEL, temperature=0)
 
 # 사용자 입력 처리
 user_input = st.chat_input("이 데이터에 대해 궁금한 점을 물어보세요")
-
+ 
 if user_input and retriever:
     # 사용자 메시지 표시
     st.chat_message("user").write(user_input)
