@@ -26,7 +26,7 @@ env_path = os.path.join(current_dir, ".env")
 load_dotenv(dotenv_path=env_path)
 
 if not os.getenv("GOOGLE_API_KEY"):
-    st.error("API Key가 설정되지 않았습니다. .env 파일을 확인해주세요.")
+    st.error("API KEY ERROR")
     st.stop()
 
 GEMINI_MODEL = "gemini-2.0-flash"
@@ -39,9 +39,9 @@ st.title("📂 내 파일과 대화하기 (AnyData)")
 # =========================================================
 with st.sidebar:
     st.header("파일 업로드")
-    uploaded_file = st.file_uploader("CSV 또는 Excel 파일을 업로드하세요", type=["csv", "xlsx"])
+    uploaded_file = st.file_uploader("CSV 또는 Excel 파일 업로드", type=["csv", "xlsx"])
 
-@st.cache_resource(show_spinner="업로드된 파일을 분석 중입니다...")
+@st.cache_resource(show_spinner="업로드된 파일을 분석 중...")
 def process_uploaded_file(file):
     if file is None:
         return None, None
