@@ -127,7 +127,7 @@ def process_uploaded_file(file):
 # 세션 상태 초기화
 if "messages" not in st.session_state:
     st.session_state["messages"] = [
-        ChatMessage(role="assistant", content="안녕하세요! CSV나 Excel 파일을 업로드해주시면 내용을 분석해 드릴게요.")
+        ChatMessage(role="assistant", content="CSV나 Excel 파일을 업로드해주시면 내용을 분석해 드릴게요.")
     ]
 
 # 파일 처리
@@ -194,9 +194,9 @@ if user_input and retriever:
                 response_container.markdown(full_response)
             
             # 출처 표시 (선택 사항)
-            source_titles = set([doc.metadata['summary_title'] for doc in retrieved_docs])
-            if source_titles:
-                st.caption(f"참고 데이터: {', '.join(list(source_titles)[:3])} 등")
+            # source_titles = set([doc.metadata['summary_title'] for doc in retrieved_docs])
+            # if source_titles:
+            #     st.caption(f"참고 데이터: {', '.join(list(source_titles)[:3])} 등")
 
             st.session_state["messages"].append(ChatMessage(role="assistant", content=full_response))
 
