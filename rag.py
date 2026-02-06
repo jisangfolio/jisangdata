@@ -1,4 +1,3 @@
-
 '''
 demo quesitons
 '''
@@ -30,7 +29,7 @@ if not os.getenv("GOOGLE_API_KEY"):
     st.stop()
 
 GEMINI_MODEL = "gemini-2.0-flash"
-EMBEDDING_MODEL = "models/embedding-001"
+EMBEDDING_MODEL = "models/gemini-embedding-001"
 
 st.set_page_config(page_title="AnyData", page_icon="📂")
 st.title("📂 내 파일과 대화하기 (AnyData)")
@@ -96,7 +95,7 @@ def process_uploaded_file(file):
     progress_bar = st.progress(0, text="데이터 저장 시작...")
     
     vectorstore = None
-    batch_size = 20
+    batch_size = 10
     total_splits = len(splits)
 
     for i in range(0, total_splits, batch_size):
@@ -111,7 +110,7 @@ def process_uploaded_file(file):
         percent = min((i + batch_size) / total_splits, 1.0)
         progress_bar.progress(percent, text=f"데이터 저장 중... ({int(percent*100)}%)")
         
-        time.sleep(1)
+        time.sleep(2)
 
     progress_bar.empty()
 
